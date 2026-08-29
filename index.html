@@ -410,7 +410,11 @@ const REMOTE_PATH = "marche507/general_data";
 let dbListenerAttached = false;
 
 function doLogin(){
-  if(!auth) return;
+  if(!auth){
+    var e0 = document.getElementById('authError');
+    if(e0) e0.textContent = "Service de connexion indisponible (Firebase non chargé). Vérifiez votre connexion Internet, puis rechargez la page.";
+    return;
+  }
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   const errorEl = document.getElementById('authError');
@@ -429,8 +433,12 @@ function doLogin(){
 
 function doLogout(){
   if(auth){
-    auth.signOut();
-    showToast("Déconnexion effectuée");
+    auth.signOut()
+      .then(function(){ showToast("Déconnexion effectuée"); })
+      .catch(function(err){
+        console.error('Echec de la deconnexion :', err);
+        showToast("❌ Échec de la déconnexion");
+      });
   }
 }
 
@@ -448,6 +456,19 @@ if(auth){
       userBadge.style.display = 'none';
     }
   });
+} else {
+  // Firebase indisponible : sans ce repli, l'ecran de connexion (z-index 3000)
+  // reste affiche indefiniment et verrouille l'application, alors que les
+  // donnees locales sont deja rendues derriere lui.
+  document.addEventListener('DOMContentLoaded', function(){
+    var scr = document.getElementById('authScreen');
+    if(scr) scr.style.display = 'none';
+    var st = document.getElementById('saveStatus');
+    if(st){
+      st.textContent = "⚠ Hors-ligne — données locales, aucune synchronisation";
+      st.style.display = 'inline';
+    }
+  });
 }
 
 function attachRemoteSync(){
@@ -458,8 +479,17 @@ function attachRemoteSync(){
     if(remote){
       const modalOpen = document.getElementById('modalOverlay').classList.contains('open');
       if(!modalOpen){
-        migrateAndApply(remote);
-        renderAll();
+        try {
+          migrateAndApply(remote);
+          renderAll();
+        } catch(err){
+          console.error('Donnees distantes inexploitables :', err);
+          var st = document.getElementById('saveStatus');
+          if(st){
+            st.textContent = "⚠ Données distantes inexploitables";
+            st.style.display = 'inline';
+          }
+        }
       }
     }
   }, function(error){
@@ -472,7 +502,11 @@ function attachRemoteSync(){
 
 function migrateAndApply(source){
   if(!source) return;
-  if(source.meta) DATA.meta = source.meta;
+  if(source.meta && typeof source.meta === "object"){
+    if(source.meta.badge != null)    DATA.meta.badge = String(source.meta.badge);
+    if(source.meta.synthese != null) DATA.meta.synthese = String(source.meta.synthese);
+    if(source.meta.footer != null)   DATA.meta.footer = String(source.meta.footer);
+  }
   if(source.guerites && Array.isArray(source.guerites)) DATA.guerites = source.guerites;
   if(source.syntheseGuerites) DATA.syntheseGuerites = source.syntheseGuerites;
   if(source.installation && Array.isArray(source.installation)) DATA.installation = source.installation;
@@ -549,7 +583,28 @@ let currentModalKey = null;
 
 function esc(s){
   if(s === undefined || s === null) return "";
-  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// La synthese generale autorise volontairement du HTML (mise en gras).
+// Elle est editable et synchronisee entre utilisateurs : sans filtrage,
+// c'est un vecteur XSS stocke. On conserve la mise en forme, on retire le reste.
+function sanitizeRich(html){
+  var raw = String(html == null ? "" : html);
+  if(typeof DOMParser === 'undefined') return esc(raw);
+  var ALLOWED = { B:1, STRONG:1, I:1, EM:1, U:1, BR:1, SPAN:1, SMALL:1 };
+  var doc = new DOMParser().parseFromString(raw, 'text/html');
+  [].slice.call(doc.body.querySelectorAll('*')).forEach(function(el){
+    if(!ALLOWED[el.tagName]){
+      var parent = el.parentNode;
+      if(!parent) return;
+      while(el.firstChild) parent.insertBefore(el.firstChild, el);
+      parent.removeChild(el);
+    } else {
+      [].slice.call(el.attributes).forEach(function(a){ el.removeAttribute(a.name); });
+    }
+  });
+  return doc.body.innerHTML;
 }
 
 function colorForPct(p){
@@ -620,7 +675,7 @@ function formatDateFr(isoStr){
 
 function getSiteGlobalPct(siteName){
   const findPct = (arr) => {
-    const item = arr.find(x => x.name.toLowerCase() === siteName.toLowerCase());
+    const item = (arr || []).find(x => String((x && x.name) || "").toLowerCase() === String(siteName || "").toLowerCase());
     return item ? (item.pct || 0) : 0;
   };
   const gc = findPct(DATA.guerites);
@@ -726,7 +781,7 @@ function updateRing(globalPct){
 
 function renderMeta(){
   document.getElementById("badgeText").textContent = DATA.meta.badge;
-  document.getElementById("syntheseText").innerHTML = DATA.meta.synthese;
+  document.getElementById("syntheseText").innerHTML = sanitizeRich(DATA.meta.synthese);
   document.getElementById("footerText").textContent = DATA.meta.footer;
   document.getElementById("syntheseGuerites").textContent = DATA.syntheseGuerites;
 }
@@ -890,7 +945,14 @@ function persistData(){
 }
 
 function loadData(){
-  const s = localStorage.getItem(STORAGE_KEY);
+  // getItem peut lever (stockage bloque, navigation privee) : sans cette garde
+  // l'exception remonte et renderAll() n'est jamais appele -> page vide.
+  var s = null;
+  try {
+    s = localStorage.getItem(STORAGE_KEY);
+  } catch(e){
+    console.warn("Stockage local inaccessible :", e);
+  }
   if(s) {
     try {
       migrateAndApply(JSON.parse(s));
@@ -900,8 +962,7 @@ function loadData(){
 
 async function exportPDF(){
   const btn = document.getElementById("pdfBtn");
-  btn.disabled = true;
-  btn.innerHTML = "⏳ Génération...";
+  if(btn){ btn.disabled = true; btn.innerHTML = "⏳ Génération..."; }
 
   try {
     const topbar = document.querySelector(".topbar");
@@ -960,8 +1021,7 @@ async function exportPDF(){
   } finally {
     document.querySelector(".topbar").style.display = "flex";
     document.querySelectorAll(".edit-btn").forEach(b => b.style.display = "inline-flex");
-    btn.disabled = false;
-    btn.innerHTML = "📄 Exporter PDF";
+    if(btn){ btn.disabled = false; btn.innerHTML = "📄 Exporter PDF"; }
   }
 }
 
