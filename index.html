@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport d'Avancement Général — Marché 507</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --panel:#ffffff; --accent:#ff6b35; --accent2:#2ec4b6;
+    --navy:#1a365d; --txt:#1c2733; --muted:#6b7d8f; --grid:#e1e7ed;
+    --danger:#e53e3e; --vt-color:#9b5de5; --essais-color:#f54291;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--txt);
+    padding: 24px;
+    background-image:
+      radial-gradient(circle at 10% 10%, rgba(255,107,53,0.08), transparent 40%),
+      radial-gradient(circle at 90% 30%, rgba(46,196,182,0.08), transparent 40%);
+  }
+  .topbar{ position:fixed; top:14px; right:14px; z-index:998; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .user-badge{ font-size:0.75rem; color:var(--navy); background:var(--panel); border:1px solid var(--grid); padding:6px 12px; border-radius:6px; font-weight:600; display:none; }
+  .save-status{ font-size:0.75rem; color:var(--muted); background:var(--panel); border:1px solid var(--grid); padding:6px 12px; border-radius:6px; display:none; }
+  
+  .edit-btn{
+    background:var(--panel); border:1px solid var(--grid); color:var(--accent);
+    font-size:0.78rem; font-weight:700; padding:6px 14px; border-radius:6px;
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    transition:background .15s, box-shadow .15s; flex:0 0 auto;
+  }
+  .edit-btn:hover{ background:#fff3ec; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .edit-btn.main{ background:var(--accent); color:#fff; border:none; padding:8px 16px; font-size:0.82rem; }
+  .edit-btn.main:hover{ background:#ff7d4d; }
+  .edit-btn.navy{ background:var(--navy); color:#fff; border:none; padding:8px 14px; font-size:0.82rem; }
+  .edit-btn.navy:hover{ background:#0f2342; }
+
+  .pdf-btn{ background:#e63946; color:#fff; border:none; padding:8px 16px; font-size:0.82rem; font-weight:700; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+  .pdf-btn:hover{ background:#c1121f; }
+  .pdf-btn:disabled{ background:#aaa; cursor:wait; }
+
+  header{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom: 2px solid var(--navy); padding-bottom:14px; margin-bottom:24px;
+    flex-wrap:wrap; gap:12px; padding-top:42px;
+  }
+  header h1{ font-size: 1.8rem; letter-spacing:0.5px; color:var(--navy); text-transform:uppercase; }
+  header h1 span{ color:var(--accent);}
+  .header-subtitle{ font-weight:700; font-style:italic; font-size:0.92rem; color:var(--navy); margin-top:4px; }
+  .badge{
+    background: linear-gradient(135deg, var(--accent), #ff9966);
+    color:#ffffff; font-weight:700; padding:6px 16px; border-radius:4px;
+    font-size:0.85rem; letter-spacing:0.5px; text-transform:uppercase;
+  }
+
+  .global{
+    background: linear-gradient(135deg, #ffffff, #eef2f7);
+    border:1px solid var(--grid); border-left: 4px solid var(--navy); border-radius:12px; padding:24px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom:28px; display:flex; align-items:center; gap:28px; flex-wrap:wrap;
+  }
+  .ring{position:relative; width:130px; height:130px; flex:0 0 auto;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring .center .num{font-size:1.8rem; font-weight:800; color:var(--navy);}
+  .ring .center .lab{font-size:0.7rem; color:var(--muted); text-transform:uppercase; font-weight:700;}
+  .global-txt{flex:1;}
+  .global-txt h2{font-size:1.25rem; margin-bottom:8px; color:var(--navy); text-transform:uppercase;}
+  .global-txt p{color:var(--txt); line-height:1.6; max-width:800px; font-size:0.95rem;}
+
+  .grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap:16px; margin-bottom:28px; }
+  .kpi{
+    background:var(--panel); border-radius:10px; padding:16px;
+    border:1px solid var(--grid); position:relative; overflow:hidden;
+    box-shadow:0 1px 4px rgba(0,0,0,0.05);
+  }
+  .kpi::before{
+    content:''; position:absolute; top:0; left:0; height:4px; width:100%;
+    background:var(--bar-color, var(--accent2));
+  }
+  .kpi .lab{color:var(--muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; font-weight:700;}
+  .kpi .val{font-size:2.2rem; font-weight:800; margin:6px 0; color:var(--navy);}
+  .kpi .pbar{height:7px; background:var(--grid); border-radius:4px; overflow:hidden; margin-top:8px;}
+  .kpi .pfill{height:100%; border-radius:4px; background:var(--bar-color, var(--accent2)); transition:width .25s;}
+
+  /* Grille des guérites (Style KPI) */
+  .guerites-status-grid{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap:14px; margin-bottom:30px;
+  }
+  .g-status-card{
+    background:var(--panel); border:1px solid var(--grid); border-radius:10px;
+    padding:16px 14px; position:relative; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05);
+    display:flex; flex-direction:column; justify-content:space-between; min-height:130px;
+    transition:transform .15s, box-shadow .15s;
+  }
+  .g-status-card:hover{ transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.08); }
+  .g-status-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:var(--card-accent, #6b7d8f);
+  }
+  .g-status-card.in-service{
+    border-color:rgba(46,196,182,0.4);
+    background:linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+    --card-accent: #2ec4b6;
+  }
+  .g-status-card.scheduled{
+    border-color:rgba(255,107,53,0.35);
+    background:linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
+    --card-accent: #ff6b35;
+  }
+  .g-status-name{
+    font-size:1.9rem; font-weight:900; color:var(--navy);
+    letter-spacing:0.5px; line-height:1.1; margin-bottom:4px;
+  }
+  .g-status-pct{
+    font-size:0.92rem; font-weight:800; color:var(--muted); margin-bottom:8px;
+  }
+  .g-status-card.in-service .g-status-pct{ color:#2ec4b6; }
+  .g-status-badge{
+    display:inline-flex; align-items:center; justify-content:center; gap:5px;
+    padding:6px 8px; border-radius:6px; font-size:0.75rem; font-weight:800;
+    text-transform:uppercase; letter-spacing:0.4px;
+  }
+  .badge-service{
+    background:#2ec4b6; color:#ffffff; box-shadow:0 2px 6px rgba(46,196,182,0.35);
+  }
+  .badge-scheduled{
+    background:#ffedd5; color:#c2410c; border:1px solid #fdba74; font-size:0.72rem;
+    flex-direction:column; align-items:flex-start; text-align:left; gap:2px;
+  }
+  .badge-scheduled .date-val{ font-weight:900; font-size:0.78rem; color:#9a3412; }
+  .badge-progress{
+    background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-weight:700;
+  }
+  
+  .sectionhead-actions{ display:flex; align-items:center; gap:8px; }
+  
+  section{margin-bottom:30px;}
+  section .sectionhead{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--grid);
+  }
+  section h2{ font-size:1.2rem; display:flex; align-items:center; gap:10px; color:var(--navy); text-transform:uppercase; }
+  section h2 .num{
+    background:var(--accent); color:#ffffff; width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800;
+  }
+
+  .cards{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:14px;}
+  .card{
+    background:var(--panel); border:1px solid var(--grid); border-radius:10px; padding:14px 16px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.04);
+  }
+  .card .top{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .card .top .name{font-weight:800; font-size:1rem; color:var(--navy);}
+  .card .top .pct{font-weight:800; font-size:1.05rem;}
+  .card .comment{color:var(--muted); font-size:0.84rem; line-height:1.45; min-height:2.8em;}
+  .card .bar-track{margin-top:8px; height:8px; background:var(--grid); border-radius:4px; overflow:hidden;}
+  .card .bar-fill{height:100%; border-radius:4px; transition:width .25s;}
+
+  .bars-card{ background:var(--panel); border:1px solid var(--grid); border-radius:10px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+  .bars{display:flex; flex-direction:column; gap:10px;}
+  .bar-row{display:grid; grid-template-columns:100px 1fr 50px; align-items:center; gap:12px;}
+  .bar-row .name{font-weight:700; font-size:0.88rem; color:#4a5568;}
+  .bar-track{height:14px; background:var(--grid); border-radius:7px; overflow:hidden; position:relative;}
+  .bar-fill{height:100%; border-radius:7px; transition:width .25s;}
+  .bar-row .pct{text-align:right; font-weight:700; font-size:0.85rem; color:var(--muted);}
+
+  .done{color:#2ec4b6;}
+  .mid{color:#ffd166;}
+  .low{color:#ff6b6b;}
+
+  footer{text-align:center; color:var(--muted); font-size:0.8rem; margin-top:30px; padding-top:14px; border-top:1px solid var(--grid);}
+
+  .auth-screen{ position:fixed; inset:0; background:var(--bg); z-index:3000; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .auth-box{ background:var(--panel); border:1px solid var(--grid); border-radius:8px; padding:32px; width:100%; max-width:360px; box-shadow:0 10px 25px rgba(0,0,0,0.12); text-align:center; }
+  .auth-box h2{ color:var(--navy); margin-bottom:6px; font-size:1.3rem; }
+  .auth-box p{ color:var(--muted); font-size:0.85rem; margin-bottom:20px; }
+  .auth-box input{ width:100%; padding:10px 12px; margin-bottom:10px; border:1px solid var(--grid); border-radius:4px; font-size:0.9rem; }
+  .auth-box button{ width:100%; background:var(--accent); color:#fff; border:none; padding:10px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.9rem; margin-top:4px; }
+  .auth-box button:hover{ background:#e05621; }
+  .auth-box button:disabled{ opacity:0.6; cursor:not-allowed; }
+  .auth-error{ color:var(--danger); font-size:0.8rem; margin-top:10px; min-height:1em; }
+  .auth-loading{ color:var(--muted); font-size:0.8rem; margin-top:10px; }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(20,26,33,0.55);
+    display:none; align-items:center; justify-content:center; z-index:1000;
+    padding:24px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal{
+    background:var(--panel); border-radius:12px; width:100%; max-width:640px;
+    max-height:86vh; display:flex; flex-direction:column;
+    box-shadow:0 12px 40px rgba(0,0,0,0.25); overflow:hidden;
+  }
+  .modal-head{ padding:16px 20px; border-bottom:1px solid var(--grid); display:flex; justify-content:space-between; align-items:center; }
+  .modal-head h3{font-size:1.1rem; color:var(--navy);}
+  .modal-head .close{ background:none; border:none; font-size:1.3rem; color:var(--muted); cursor:pointer; width:32px; height:32px; border-radius:6px; }
+  .modal-head .close:hover{ background:var(--grid); }
+  .modal-body{ padding:16px 20px; overflow-y:auto; flex:1; }
+  .modal-foot{ padding:14px 20px; border-top:1px solid var(--grid); display:flex; justify-content:flex-end; gap:10px; }
+  
+  .btn{ border:none; border-radius:6px; padding:8px 16px; font-size:0.85rem; font-weight:700; cursor:pointer; }
+  .btn.cancel{ background:var(--grid); color:var(--txt); }
+  .btn.save{ background:var(--accent); color:#fff; }
+  .btn.save:hover{ background:#e05621; }
+
+  .field-row{ display:grid; grid-template-columns: 1.2fr 1fr 60px; gap:10px; align-items:center; margin-bottom:10px; }
+  .pctwrap{ display:flex; align-items:center; gap:6px; }
+  .pctwrap input[type="number"]{ width:60px; border:1px solid var(--grid); border-radius:4px; padding:5px 6px; font-size:0.85rem; text-align:right; }
+  .field-block{ border:1px solid var(--grid); border-radius:8px; padding:12px; margin-bottom:12px; background:#fafbfc; }
+  .field-block .fb-head{ display:flex; gap:10px; align-items:center; margin-bottom:8px; }
+  .field-block .fb-head input[type="text"]{ font-weight:700; flex:1; border:1px solid var(--grid); border-radius:4px; padding:5px 8px; }
+  .field-block textarea{ width:100%; border:1px solid var(--grid); border-radius:4px; padding:6px 8px; font-size:0.82rem; font-family:inherit; min-height:48px; resize:vertical; }
+  .modal-section-label{ font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); font-weight:700; margin:16px 0 6px; }
+  .modal-section-label:first-child{ margin-top:0; }
+
+  .toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--navy); color:#fff; padding:8px 20px; border-radius:20px;
+    font-size:0.82rem; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; z-index:1001;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <h2>🔒 Connexion</h2>
+    <p>Suivi Général d'Avancement — Marché 507</p>
+    <input type="email" id="authEmail" placeholder="Adresse e-mail" autocomplete="username">
+    <input type="password" id="authPassword" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter'){doLogin();}">
+    <button id="authSubmitBtn" onclick="doLogin()">Se connecter</button>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-loading" id="authLoading" style="display:none;">Connexion en cours…</div>
+  </div>
+</div>
+
+<div class="topbar">
+  <span class="user-badge" id="userBadge"></span>
+  <span class="save-status" id="saveStatus">✓ Enregistré</span>
+  <button class="edit-btn main" onclick="openModal('global')">✏️ Modifier Général</button>
+  <button class="edit-btn main" onclick="persistData()">💾 Enregistrer</button>
+  <button class="edit-btn navy" onclick="doLogout()">🔓 Déconnexion</button>
+  <button class="pdf-btn" id="pdfBtn" onclick="exportPDF()">📄 Exporter PDF</button>
+</div>
+
+<div id="mainReportArea">
+  <header>
+    <div>
+      <h1 id="mainTitleText">Rapport d'Avancement <span>· VO/OS Déplacement Guerites</span></h1>
+      <div class="header-subtitle">VO/OS Déplacement Guerites — Marché 507</div>
+    </div>
+    <div class="badge" id="badgeText">Marché 507</div>
+  </header>
+
+  <div class="global">
+    <div class="ring">
+      <svg width="130" height="130" viewBox="0 0 130 130">
+        <circle cx="65" cy="65" r="55" stroke="#e1e7ed" stroke-width="12" fill="none"/>
+        <circle id="ringFill" cx="65" cy="65" r="55" stroke="#ff6b35" stroke-width="12" fill="none"
+          stroke-dasharray="345.5" stroke-dashoffset="217.6" stroke-linecap="round"/>
+      </svg>
+      <div class="center">
+        <div class="num" id="globalPctNum">37%</div>
+        <div class="lab">Global</div>
+      </div>
+    </div>
+    <div class="global-txt">
+      <h2>Synthèse Générale</h2>
+      <p id="syntheseText">Chargement de la synthèse...</p>
+    </div>
+  </div>
+
+  <div class="grid" id="kpiGrid">
+    <div class="kpi" style="--bar-color:#ff6b35;" data-kpi="genieCivil">
+      <div class="lab">1) Génie Civil</div>
+      <div class="val"><span class="kpi-pct">64</span>%</div>
+      <div class="pbar"><div class="pfill" style="width:64%"></div></div>
+    </div>
+    <div class="kpi" style="--bar-color:#2ec4b6;" data-kpi="installation">
+      <div class="lab">2) Installation Poste</div>
+      <div class="val"><span class="kpi-pct">45</span>%</div>
+      <div class="pbar"><div class="pfill" style="width:45%"></div></div>
+    </div>
+    <div class="kpi" style="--bar-color:#ffd166;" data-kpi="campagne">
+      <div class="lab">3) Campagne & Câbles</div>
+      <div class="val"><span class="kpi-pct">40</span>%</div>
+      <div class="pbar"><div class="pfill" style="width:40%"></div></div>
+    </div>
+    <div class="kpi" style="--bar-color:#9b5de5;" data-kpi="vt">
+      <div class="lab">4) Vérifications Techniques</div>
+      <div class="val"><span class="kpi-pct">36</span>%</div>
+      <div class="pbar"><div class="pfill" style="width:36%"></div></div>
+    </div>
+    <div class="kpi" style="--bar-color:#f54291;" data-kpi="essais">
+      <div class="lab">5) Essais Internes : Poste</div>
+      <div class="val"><span class="kpi-pct">0</span>%</div>
+      <div class="pbar"><div class="pfill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- NOUVEAU BLOC : ÉTAT DES GUÉRITES STYLE KPI -->
+  <section id="sectionGueritesStatus">
+    <div class="sectionhead">
+      <h2><span class="num">★</span> État & Mise en Service des Guérites</h2>
+      <button class="edit-btn" onclick="openModal('serviceDates')">📅 Dates de Mise en Service</button>
+    </div>
+    <div class="guerites-status-grid" id="gueritesStatusGrid"></div>
+  </section>
+
+  <section id="section1">
+    <div class="sectionhead">
+      <h2><span class="num">1</span> Génie Civil – Guérites</h2>
+      <button class="edit-btn" onclick="openModal('guerites')">✏️ Modifier</button>
+    </div>
+    <div class="cards" id="guerites-cards"></div>
+    <p style="color:var(--muted); margin-top:14px; font-size:0.9rem; line-height:1.6; background:#ffffff; border:1px solid var(--grid); padding:12px 14px; border-radius:8px;">
+      <strong>Synthèse GC :</strong> <span id="syntheseGuerites">Chargement...</span>
+    </p>
+  </section>
+
+  <section id="section2">
+    <div class="sectionhead">
+      <h2><span class="num">2</span> Installation Équipements Poste</h2>
+      <button class="edit-btn" onclick="openModal('installation')">✏️ Modifier</button>
+    </div>
+    <div class="bars-card">
+      <div class="bars" id="installation-bars"></div>
+    </div>
+  </section>
+
+  <section id="section3">
+    <div class="sectionhead">
+      <h2><span class="num">3</span> Campagne & Artères de Câbles</h2>
+      <button class="edit-btn" onclick="openModal('campagne')">✏️ Modifier</button>
+    </div>
+    <div class="bars-card">
+      <div class="bars" id="campagne-bars"></div>
+    </div>
+  </section>
+
+  <section id="section4">
+    <div class="sectionhead">
+      <h2><span class="num">4</span> Vérifications Techniques (VT)</h2>
+      <button class="edit-btn" onclick="openModal('vt')">✏️ Modifier</button>
+    </div>
+    <div class="bars-card">
+      <div class="bars" id="vt-bars"></div>
+    </div>
+  </section>
+
+  <section id="section5">
+    <div class="sectionhead">
+      <h2><span class="num">5</span> Essais Internes : Poste</h2>
+      <button class="edit-btn" onclick="openModal('essais')">✏️ Modifier</button>
+    </div>
+    <div class="bars-card">
+      <div class="bars" id="essais-bars"></div>
+    </div>
+  </section>
+
+  <footer id="footerText">Rapport d'avancement général — Marché 507</footer>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Modifier</h3>
+      <button class="close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn save" onclick="saveModal()">💾 Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAGW2JcAn7OsJYgyE-AetfN5ObiP36Nf94",
+  authDomain: "rapport-d-avancement-csp.firebaseapp.com",
+  databaseURL: "https://rapport-d-avancement-csp-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "rapport-d-avancement-csp",
+  storageBucket: "rapport-d-avancement-csp.firebasestorage.app",
+  messagingSenderId: "654914178815",
+  appId: "1:654914178815:web:39b519c510fc21fc5706ca"
+};
+
+if (typeof firebase !== 'undefined') {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
+const db = typeof firebase !== 'undefined' ? firebase.database() : null;
+const REMOTE_PATH = "marche507/general_data";
+let dbListenerAttached = false;
+
+function doLogin(){
+  if(!auth) return;
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errorEl = document.getElementById('authError');
+  const btn = document.getElementById('authSubmitBtn');
+  const loadingEl = document.getElementById('authLoading');
+  errorEl.textContent = '';
+  if(!email || !password){ errorEl.textContent = 'Veuillez renseigner e-mail et mot de passe.'; return; }
+  btn.disabled = true; loadingEl.style.display = 'block';
+  auth.signInWithEmailAndPassword(email, password)
+    .catch(err => {
+      if(err.code === 'auth/invalid-email'){ errorEl.textContent = "Adresse e-mail invalide."; }
+      else { errorEl.textContent = "Échec de connexion : e-mail ou mot de passe incorrect."; }
+    })
+    .finally(() => { btn.disabled = false; loadingEl.style.display = 'none'; });
+}
+
+function doLogout(){
+  if(auth){
+    auth.signOut();
+    showToast("Déconnexion effectuée");
+  }
+}
+
+if(auth){
+  auth.onAuthStateChanged(function(user){
+    const authScreen = document.getElementById('authScreen');
+    const userBadge = document.getElementById('userBadge');
+    if(user){
+      authScreen.style.display = 'none';
+      userBadge.textContent = '👤 ' + user.email;
+      userBadge.style.display = 'inline';
+      attachRemoteSync();
+    } else {
+      authScreen.style.display = 'flex';
+      userBadge.style.display = 'none';
+    }
+  });
+}
+
+function attachRemoteSync(){
+  if(dbListenerAttached || !db) return;
+  dbListenerAttached = true;
+  db.ref(REMOTE_PATH).on('value', function(snapshot){
+    const remote = snapshot.val();
+    if(remote){
+      const modalOpen = document.getElementById('modalOverlay').classList.contains('open');
+      if(!modalOpen){
+        migrateAndApply(remote);
+        renderAll();
+      }
+    }
+  }, function(error){
+    console.error('Erreur de synchronisation Firebase :', error);
+    const statusEl = document.getElementById('saveStatus');
+    statusEl.textContent = '⚠ Hors-ligne (données locales)';
+    statusEl.style.display = 'inline';
+  });
+}
+
+function migrateAndApply(source){
+  if(!source) return;
+  if(source.meta) DATA.meta = source.meta;
+  if(source.guerites && Array.isArray(source.guerites)) DATA.guerites = source.guerites;
+  if(source.syntheseGuerites) DATA.syntheseGuerites = source.syntheseGuerites;
+  if(source.installation && Array.isArray(source.installation)) DATA.installation = source.installation;
+  if(source.campagne && Array.isArray(source.campagne)) DATA.campagne = source.campagne;
+  if(source.vt && Array.isArray(source.vt)) DATA.vt = source.vt;
+  if(source.essais && Array.isArray(source.essais)) DATA.essais = source.essais;
+  if(source.serviceDates) DATA.serviceDates = source.serviceDates;
+}
+
+const DATA = {
+  meta: {
+    badge: "Marché 507",
+    synthese: "Les travaux de <strong>Génie Civil</strong> affichent le niveau d'avancement le plus élevé avec <strong>64%</strong>. Les vérifications techniques se concentrent principalement sur les postes <strong>GL100</strong> et <strong>GL103</strong>. L'avancement global du projet est actuellement estimé à <strong>37%</strong>.",
+    footer: "Rapport d'avancement général — Marché 507"
+  },
+  guerites: [
+    { name:"Gs33", pct:100, comment:"Travaux terminés" },
+    { name:"GL100", pct:100, comment:"Travaux terminés" },
+    { name:"GL103", pct:100, comment:"Travaux terminés" },
+    { name:"GS106", pct:65, comment:"Réalisation des poteaux et cloisonnements. Dalle niveau 0 achevée." },
+    { name:"GL112", pct:100, comment:"Travaux terminés" },
+    { name:"GL92", pct:5, comment:"Piquetage en cours" },
+    { name:"G93", pct:5, comment:"Piquetage en cours" }
+  ],
+  serviceDates: {
+    "Gs33": "2026-10-15",
+    "GL100": "2026-11-01",
+    "GL103": "2026-11-15",
+    "GS106": "2026-12-30",
+    "GL112": "2026-11-20",
+    "GL92": "",
+    "G93": ""
+  },
+  syntheseGuerites: "Les travaux de génie civil sont achevés sur Gs33, GL100, GL103 et GL112. GS106 poursuit sa phase de construction, tandis que GL92 et G93 sont en phase préparatoire.",
+  installation: [
+    { name:"Gs33", pct:100 },
+    { name:"GL100", pct:100 },
+    { name:"GL103", pct:100 },
+    { name:"GS106", pct:0 },
+    { name:"GL112", pct:83 },
+    { name:"GL92", pct:0 },
+    { name:"G93", pct:0 }
+  ],
+  campagne: [
+    { name:"Gs33", pct:95 },
+    { name:"GL100", pct:95 },
+    { name:"GL103", pct:95 },
+    { name:"GS106", pct:0 },
+    { name:"GL112", pct:0 },
+    { name:"GL92", pct:0 },
+    { name:"G93", pct:0 }
+  ],
+  vt: [
+    { name:"GL100", pct:100 },
+    { name:"GL103", pct:100 },
+    { name:"Gs33", pct:20 },
+    { name:"GS106", pct:0 },
+    { name:"GL112", pct:0 },
+    { name:"GL92", pct:0 },
+    { name:"G93", pct:0 }
+  ],
+  essais: [
+    { name:"Gs33", pct:0 },
+    { name:"GL100", pct:0 },
+    { name:"GL103", pct:0 },
+    { name:"GS106", pct:0 },
+    { name:"GL112", pct:0 },
+    { name:"GL92", pct:0 },
+    { name:"G93", pct:0 }
+  ]
+};
+
+let currentModalKey = null;
+
+function esc(s){
+  if(s === undefined || s === null) return "";
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function colorForPct(p){
+  if(p >= 80) return "#2ec4b6";
+  if(p >= 30) return "#ffd166";
+  return "#ff6b6b";
+}
+
+function pctClass(p){
+  if(p >= 80) return "done";
+  if(p >= 30) return "mid";
+  return "low";
+}
+
+function clampPct(v){
+  v = parseFloat(String(v).replace(",", "."));
+  if(isNaN(v)) v = 0;
+  return Math.max(0, Math.min(100, v));
+}
+
+function avg(arr){
+  return (arr && arr.length) ? arr.reduce((s,x)=> s + (x.pct || 0), 0) / arr.length : 0;
+}
+
+function guerCardBlock(arrName, i, item){
+  return `
+    <div class="field-block" data-arr="${arrName}" data-i="${i}">
+      <div class="fb-head">
+        <input type="text" data-field="name" value="${esc(item.name)}">
+        <div class="pctwrap" style="width:150px;">
+          <input type="range" min="0" max="100" value="${item.pct}" data-field="pctRange"
+            oninput="this.parentElement.querySelector('[data-field=pctNum]').value=this.value">
+          <input type="number" min="0" max="100" data-field="pctNum" value="${item.pct}"
+            oninput="this.parentElement.querySelector('[data-field=pctRange]').value=this.value">
+          <span>%</span>
+        </div>
+      </div>
+      <textarea data-field="comment" placeholder="Commentaire...">${esc(item.comment)}</textarea>
+    </div>
+  `;
+}
+
+function barFieldRow(arrName, i, item){
+  return `
+    <div class="field-row" data-arr="${arrName}" data-i="${i}">
+      <input type="text" data-field="name" value="${esc(item.name)}">
+      <input type="range" min="0" max="100" value="${item.pct}" data-field="pctRange"
+        oninput="this.parentElement.querySelector('[data-field=pctNum]').value=this.value">
+      <div class="pctwrap">
+        <input type="number" min="0" max="100" data-field="pctNum" value="${item.pct}"
+          oninput="this.parentElement.parentElement.querySelector('[data-field=pctRange]').value=this.value">
+      </div>
+    </div>
+  `;
+}
+
+function closeModal(){
+  document.getElementById("modalOverlay").classList.remove("open");
+  currentModalKey = null;
+}
+
+function formatDateFr(isoStr){
+  if(!isoStr) return "À définir";
+  const parts = isoStr.split("-");
+  if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return isoStr;
+}
+
+function getSiteGlobalPct(siteName){
+  const findPct = (arr) => {
+    const item = arr.find(x => x.name.toLowerCase() === siteName.toLowerCase());
+    return item ? (item.pct || 0) : 0;
+  };
+  const gc = findPct(DATA.guerites);
+  const inst = findPct(DATA.installation);
+  const camp = findPct(DATA.campagne);
+  const vt = findPct(DATA.vt);
+  const ess = findPct(DATA.essais);
+  return (gc + inst + camp + vt + ess) / 5;
+}
+
+function renderGueritesStatusGrid(){
+  const container = document.getElementById("gueritesStatusGrid");
+  if(!container) return;
+
+  container.innerHTML = DATA.guerites.map(g => {
+    const siteGlobal = Math.round(getSiteGlobalPct(g.name));
+    const targetDate = (DATA.serviceDates && DATA.serviceDates[g.name]) ? DATA.serviceDates[g.name] : "";
+    
+    let cardClass = "";
+    let badgeHtml = "";
+
+    if(siteGlobal >= 100){
+      cardClass = "in-service";
+      badgeHtml = `<div class="g-status-badge badge-service">✓ EN SERVICE</div>`;
+    } else if(siteGlobal >= 80){
+      cardClass = "scheduled";
+      badgeHtml = `
+        <div class="g-status-badge badge-scheduled">
+          <span>MES Prévue :</span>
+          <span class="date-val">📅 ${formatDateFr(targetDate)}</span>
+        </div>
+      `;
+    } else {
+      badgeHtml = `<div class="g-status-badge badge-progress">⚡ En cours</div>`;
+    }
+
+    return `
+      <div class="g-status-card ${cardClass}">
+        <div>
+          <div class="g-status-name">${esc(g.name)}</div>
+          <div class="g-status-pct">${siteGlobal}% global</div>
+        </div>
+        ${badgeHtml}
+      </div>
+    `;
+  }).join("");
+}
+
+function renderGuerites(){
+  const container = document.getElementById("guerites-cards");
+  if(!container) return;
+  container.innerHTML = DATA.guerites.map(g=>`
+    <div class="card">
+      <div class="top"><span class="name">${esc(g.name)}</span><span class="pct ${pctClass(g.pct)}">${g.pct}%</span></div>
+      <div class="comment">${esc(g.comment)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${g.pct}%;background:${colorForPct(g.pct)}"></div></div>
+    </div>
+  `).join("");
+}
+
+function renderBars(containerId, arrName, color){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  container.innerHTML = DATA[arrName].map(row=>`
+    <div class="bar-row">
+      <span class="name">${esc(row.name)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${row.pct}%;background:${color==="auto"?colorForPct(row.pct):color}"></div></div>
+      <span class="pct">${row.pct}%</span>
+    </div>
+  `).join("");
+}
+
+function recalcKPIs(){
+  const kpiGenie = avg(DATA.guerites), kpiInstall = avg(DATA.installation),
+        kpiCampagne = avg(DATA.campagne), kpiVT = avg(DATA.vt), kpiEssais = avg(DATA.essais);
+  setKpi("genieCivil", kpiGenie); setKpi("installation", kpiInstall);
+  setKpi("campagne", kpiCampagne); setKpi("vt", kpiVT); setKpi("essais", kpiEssais);
+  
+  const global = (kpiGenie + kpiInstall + kpiCampagne + kpiVT + kpiEssais) / 5;
+  updateRing(global);
+}
+
+function setKpi(key, pct){
+  const card = document.querySelector(`.kpi[data-kpi="${key}"]`);
+  if(!card) return;
+  const round = Math.round(pct);
+  card.querySelector(".kpi-pct").textContent = round;
+  card.querySelector(".pfill").style.width = round + "%";
+}
+
+function updateRing(globalPct){
+  const round = Math.round(globalPct);
+  const numEl = document.getElementById("globalPctNum");
+  if(numEl) numEl.textContent = round + "%";
+  const circumference = 2 * Math.PI * 55;
+  const offset = circumference * (1 - round/100);
+  const ring = document.getElementById("ringFill");
+  if(ring){
+    ring.style.strokeDasharray = circumference.toFixed(1);
+    ring.style.strokeDashoffset = offset.toFixed(1);
+  }
+}
+
+function renderMeta(){
+  document.getElementById("badgeText").textContent = DATA.meta.badge;
+  document.getElementById("syntheseText").innerHTML = DATA.meta.synthese;
+  document.getElementById("footerText").textContent = DATA.meta.footer;
+  document.getElementById("syntheseGuerites").textContent = DATA.syntheseGuerites;
+}
+
+function renderAll(){
+  renderMeta();
+  renderGueritesStatusGrid();
+  renderGuerites();
+  renderBars("installation-bars","installation","auto");
+  renderBars("campagne-bars","campagne","auto");
+  renderBars("vt-bars","vt","#9b5de5"); 
+  renderBars("essais-bars","essais","#f54291");
+  recalcKPIs();
+}
+
+function openModal(key){
+  currentModalKey = key;
+  const title = document.getElementById("modalTitle");
+  const body = document.getElementById("modalBody");
+  let html = "";
+
+  if(key === "global"){
+    title.textContent = "Modifier les informations générales";
+    html += `
+      <div class="modal-section-label">Badge projet</div>
+      <input type="text" id="f-badge" value="${esc(DATA.meta.badge)}" style="width:100%; padding:8px; border:1px solid var(--grid); border-radius:4px; margin-bottom:10px;">
+      <div class="modal-section-label">Synthèse générale (HTML autorisé)</div>
+      <textarea id="f-synthese" style="width:100%; min-height:90px; padding:8px; border:1px solid var(--grid); border-radius:4px; margin-bottom:10px;">${esc(DATA.meta.synthese)}</textarea>
+      <div class="modal-section-label">Pied de page</div>
+      <input type="text" id="f-footer" value="${esc(DATA.meta.footer)}" style="width:100%; padding:8px; border:1px solid var(--grid); border-radius:4px;">
+    `;
+  }
+  else if(key === "serviceDates"){
+    title.textContent = "Dates de Mise en Service Prévues";
+    html += `<div style="font-size:0.85rem; color:var(--muted); margin-bottom:14px; line-height:1.4;">
+      Indiquez la date prévisionnelle de mise en service pour chaque guérite (affichée lorsque l'avancement global de la guérite atteint 80% ou plus).
+    </div>`;
+    if(!DATA.serviceDates) DATA.serviceDates = {};
+    html += DATA.guerites.map(g => {
+      const curDate = DATA.serviceDates[g.name] || "";
+      const siteGlobal = Math.round(getSiteGlobalPct(g.name));
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border:1px solid var(--grid); border-radius:6px; padding:10px 12px; margin-bottom:8px;">
+          <div>
+            <strong style="color:var(--navy); font-size:1rem;">${esc(g.name)}</strong>
+            <span style="font-size:0.8rem; color:var(--muted); margin-left:8px;">(${siteGlobal}% global)</span>
+          </div>
+          <input type="date" class="f-site-date" data-site="${esc(g.name)}" value="${curDate}"
+            style="border:1px solid var(--grid); border-radius:4px; padding:6px 10px; font-family:inherit; font-size:0.85rem;">
+        </div>
+      `;
+    }).join("");
+  }
+  else if(key === "guerites"){
+    title.textContent = "Modifier — Génie Civil (Guérites)";
+    html += DATA.guerites.map((g,i)=> guerCardBlock("guerites", i, g)).join("");
+    html += `<div class="modal-section-label">Synthèse de la section Génie Civil</div>
+      <textarea id="f-synth-guerites" style="width:100%; min-height:60px; padding:8px; border:1px solid var(--grid); border-radius:4px;">${esc(DATA.syntheseGuerites)}</textarea>`;
+  }
+  else if(key === "installation"){
+    title.textContent = "Modifier — Installation Équipements Poste";
+    html += DATA.installation.map((row,i)=> barFieldRow("installation", i, row)).join("");
+  }
+  else if(key === "campagne"){
+    title.textContent = "Modifier — Campagne & Artères de Câbles";
+    html += DATA.campagne.map((row,i)=> barFieldRow("campagne", i, row)).join("");
+  }
+  else if(key === "vt"){
+    title.textContent = "Modifier — Vérifications Techniques";
+    html += DATA.vt.map((row,i)=> barFieldRow("vt", i, row)).join("");
+  }
+  else if(key === "essais"){
+    title.textContent = "Modifier — Essais Internes : Poste";
+    html += DATA.essais.map((row,i)=> barFieldRow("essais", i, row)).join("");
+  }
+
+  body.innerHTML = html;
+  document.getElementById("modalOverlay").classList.add("open");
+}
+
+function saveModal(){
+  const key = currentModalKey;
+  const body = document.getElementById("modalBody");
+
+  if(key === "global"){
+    DATA.meta.badge = document.getElementById("f-badge").value.trim();
+    DATA.meta.synthese = document.getElementById("f-synthese").value.trim();
+    DATA.meta.footer = document.getElementById("f-footer").value.trim();
+  }
+  else if(key === "serviceDates"){
+    if(!DATA.serviceDates) DATA.serviceDates = {};
+    body.querySelectorAll(".f-site-date").forEach(input => {
+      const site = input.dataset.site;
+      DATA.serviceDates[site] = input.value;
+    });
+  }
+  else if(key === "guerites"){
+    body.querySelectorAll(".field-block[data-arr]").forEach(block=>{
+      const i = parseInt(block.dataset.i);
+      const arrName = block.dataset.arr;
+      const name = block.querySelector('[data-field="name"]').value.trim();
+      const pct = clampPct(block.querySelector('[data-field="pctNum"]').value);
+      const comment = block.querySelector('[data-field="comment"]').value.trim();
+      DATA[arrName][i] = { name, pct, comment };
+    });
+    const s = document.getElementById("f-synth-guerites");
+    if(s) DATA.syntheseGuerites = s.value.trim();
+  }
+  else if(key === "installation" || key === "campagne" || key === "vt" || key === "essais"){
+    body.querySelectorAll(".field-row[data-arr]").forEach(row=>{
+      const i = parseInt(row.dataset.i);
+      const arrName = row.dataset.arr;
+      const name = row.querySelector('[data-field="name"]').value.trim();
+      const pct = clampPct(row.querySelector('[data-field="pctNum"]').value);
+      DATA[arrName][i] = { name, pct };
+    });
+  }
+
+  renderAll();
+  closeModal();
+  persistData();
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=> t.classList.remove("show"), 2000);
+}
+
+const STORAGE_KEY = "suivi_general_m507_v1";
+
+function persistData(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+  } catch(e){
+    console.warn("Stockage local indisponible :", e);
+  }
+
+  const statusEl = document.getElementById("saveStatus");
+  if(auth && auth.currentUser && db){
+    statusEl.textContent = "⏳ Sauvegarde Cloud...";
+    statusEl.style.display = "inline";
+    db.ref(REMOTE_PATH).set(DATA)
+      .then(()=>{
+        statusEl.textContent = "✓ Enregistré en ligne";
+        showToast("💾 Synchronisé sur Firebase avec succès !");
+      })
+      .catch((err)=>{
+        console.error('Erreur sauvegarde Firebase :', err);
+        statusEl.textContent = "⚠ Sauvegardé en local seulement";
+      })
+      .finally(()=>{ setTimeout(()=> { statusEl.style.display = "none"; }, 2500); });
+  } else {
+    statusEl.textContent = "✓ Enregistré (local)";
+    statusEl.style.display = "inline";
+    showToast("💾 Sauvegardé en local");
+    setTimeout(()=> { statusEl.style.display = "none"; }, 1800);
+  }
+}
+
+function loadData(){
+  const s = localStorage.getItem(STORAGE_KEY);
+  if(s) {
+    try {
+      migrateAndApply(JSON.parse(s));
+    } catch(e){ console.error(e); }
+  }
+}
+
+async function exportPDF(){
+  const btn = document.getElementById("pdfBtn");
+  btn.disabled = true;
+  btn.innerHTML = "⏳ Génération...";
+
+  try {
+    const topbar = document.querySelector(".topbar");
+    const editBtns = document.querySelectorAll(".edit-btn");
+    topbar.style.display = "none";
+    editBtns.forEach(b => b.style.display = "none");
+
+    const { jsPDF } = window.jspdf;
+    const PAGE_W_MM = 210, PAGE_H_MM = 297;
+    const CAPTURE_W_PX = 800;
+    const SCALE = 2;
+
+    const headerEl = document.querySelector("header");
+    const globalEl = document.querySelector(".global");
+    const kpiEl = document.querySelector(".grid");
+    const gueritesStatusEl = document.querySelector("#sectionGueritesStatus");
+    const sec1El = document.querySelector("#section1");
+    const sec2El = document.querySelector("#section2");
+    const sec3El = document.querySelector("#section3");
+    const sec4El = document.querySelector("#section4");
+    const sec5El = document.querySelector("#section5");
+    const footerEl = document.querySelector("footer");
+
+    async function capturePage(elements){
+      const wrap = document.createElement("div");
+      wrap.style.cssText = `position:fixed;left:-9999px;top:0;width:${CAPTURE_W_PX}px;background:#f4f6f9;padding:16px 20px;box-sizing:border-box;font-family:'Segoe UI',sans-serif;`;
+      elements.forEach(el => {
+        if(!el) return;
+        const c = el.cloneNode(true);
+        c.querySelectorAll("button, .edit-btn, .pdf-btn").forEach(b => b.remove());
+        wrap.appendChild(c);
+      });
+      document.body.appendChild(wrap);
+      const canvas = await html2canvas(wrap, { scale:SCALE, useCORS:true, backgroundColor:"#f4f6f9", logging:false, windowWidth:CAPTURE_W_PX });
+      document.body.removeChild(wrap);
+      return canvas;
+    }
+
+    const pdf = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4", compress:true });
+
+    // PAGE 1
+    const c1 = await capturePage([headerEl, globalEl, kpiEl, gueritesStatusEl, sec1El]);
+    pdf.addImage(c1.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, PAGE_W_MM, PAGE_H_MM);
+
+    // PAGE 2
+    pdf.addPage();
+    const c2 = await capturePage([sec2El, sec3El, sec4El, sec5El, footerEl]);
+    pdf.addImage(c2.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, PAGE_W_MM, PAGE_H_MM);
+
+    pdf.save("Rapport_Avancement_General_Marche507.pdf");
+    showToast("✅ PDF exporté avec succès");
+
+  } catch(err){
+    console.error(err);
+    showToast("❌ Erreur lors de l'export PDF");
+  } finally {
+    document.querySelector(".topbar").style.display = "flex";
+    document.querySelectorAll(".edit-btn").forEach(b => b.style.display = "inline-flex");
+    btn.disabled = false;
+    btn.innerHTML = "📄 Exporter PDF";
+  }
+}
+
+loadData();
+renderAll();
+</script>
+</body>
+</html>
